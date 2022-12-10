@@ -21,6 +21,7 @@ import java.util.*;
 
 public class IngredientTracker {
     private final List<Ingredient> ingredients = new ArrayList<>();
+    private final Map<Ingredient, List<ItemStack>> ingredientsStack = new HashMap<>();
     private final Map<ResourceLocation, Integer> storedItems = new HashMap<>();
     private boolean doTransfer;
 
@@ -29,6 +30,13 @@ public class IngredientTracker {
             Optional<ItemStack> optionalItemStack = slotView.getIngredients(VanillaTypes.ITEM_STACK).findAny();
 
             optionalItemStack.ifPresent(stack -> ingredients.add(new Ingredient(slotView, stack.getCount())));
+        }
+
+        for (var ingredient : ingredients) {
+            var list = ingredient
+                    .getSlotView()
+                    .getIngredients(VanillaTypes.ITEM_STACK).toList();
+            ingredientsStack.put(ingredient, list);
         }
 
         this.doTransfer = doTransfer;
@@ -56,28 +64,23 @@ public class IngredientTracker {
 
         for (Ingredient ingredient : ingredients) {
             if (available == 0) {
-                return;
+                break;
             }
-
-            Optional<ItemStack> match = ingredient
-                .getSlotView()
-                .getIngredients(VanillaTypes.ITEM_STACK)
-                .filter(s -> API.instance().getComparer().isEqual(stack, s, IComparer.COMPARE_NBT))
-                .findFirst();
-
-            if (match.isPresent()) {
-                // Craftables and non-craftables are 2 different gridstacks
-                // As such we need to ignore craftable stacks as they are not actual items
-                if (gridStack != null && gridStack.isCraftable()) {
-                    ingredient.setCraftStackId(gridStack.getId());
-                } else if (!ingredient.isAvailable()) {
-                    int needed = ingredient.getMissingAmount();
-                    int used = Math.min(available, needed);
-                    ingredient.fulfill(used);
-                    available -= used;
+            for (var s : ingredientsStack.get(ingredient)) {
+                if (API.instance().getComparer().isEqual(stack, s, IComparer.COMPARE_NBT)) {
+                    if (gridStack != null && gridStack.isCraftable()) {
+                        ingredient.setCraftStackId(gridStack.getId());
+                    } else if (!ingredient.isAvailable()) {
+                        int needed = ingredient.getMissingAmount();
+                        int used = Math.min(available, needed);
+                        ingredient.fulfill(used);
+                        available -= used;
+                    }
                 }
             }
         }
+
+        ingredients.removeIf(Ingredient::isAvailable);
     }
 
     public boolean hasMissing() {
@@ -89,13 +92,13 @@ public class IngredientTracker {
     }
 
     public boolean isAutocraftingAvailable() {
-        return ingredients.stream().anyMatch(Ingredient::isCraftable);
+        return ingredientsStack.keySet().stream().anyMatch(Ingredient::isCraftable);
     }
 
     public Map<UUID, Integer> createCraftingRequests() {
         Map<UUID, Integer> toRequest = new HashMap<>();
 
-        for (Ingredient ingredient : ingredients) {
+        for (Ingredient ingredient : ingredientsStack.keySet()) {
             if (!ingredient.isAvailable() && ingredient.isCraftable()) {
                 toRequest.merge(ingredient.getCraftStackId(), ingredient.getMissingAmount(), Integer::sum);
             }
