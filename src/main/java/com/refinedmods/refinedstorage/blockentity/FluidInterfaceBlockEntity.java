@@ -13,9 +13,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nonnull;
@@ -43,7 +41,7 @@ public class FluidInterfaceBlockEntity extends NetworkNodeBlockEntity<FluidInter
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction direction) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return inCapability.cast();
-        } else if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+        } else if (cap == ForgeCapabilities.FLUID_HANDLER) {
             return tankCapability.cast();
         }
 

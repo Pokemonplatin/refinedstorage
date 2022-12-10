@@ -20,7 +20,6 @@ import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
@@ -61,7 +60,7 @@ public final class LevelUtils {
 
     public static IFluidHandler getFluidHandler(@Nullable BlockEntity blockEntity, Direction side) {
         if (blockEntity != null) {
-            return blockEntity.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side).orElse(null);
+            return blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElse(null);
         }
 
         return null;
